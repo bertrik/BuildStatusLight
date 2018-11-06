@@ -5,6 +5,11 @@
 #include <WiFiManager.h>
 #include <PubSubClient.h>
 
+#include "AudioFileSourceSPIFFS.h"
+#include "AudioFileSourceID3.h"
+#include "AudioGeneratorMP3.h"
+#include "AudioOutputI2SNoDAC.h"
+
 #define MQTT_HOST   "test.mosquitto.org"
 #define MQTT_PORT   1883
 
@@ -27,6 +32,7 @@ static WiFiManager wifiManager;
 static WiFiClient wifiClient;
 static PubSubClient mqttClient(wifiClient);
 static vri_mode_t mode = FLASH;
+static AudioOutputI2SNoDAC *dac;
 
 // updates all three LEDs
 static void leds_write(int red, int yellow, int green)
@@ -85,6 +91,9 @@ void setup(void)
     Serial.begin(115200);
     Serial.print("\nBuildStatusLight\n");
     
+    // init file system
+    SPIFFS.begin();
+
     // init LEDs
     leds_init(FLASH);
 
