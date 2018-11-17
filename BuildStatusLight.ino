@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <string.h>
+#include <stdio.h>
 
 #include <ESP8266WiFi.h>
 #include <WiFiManager.h>
@@ -32,7 +33,10 @@ static WiFiManager wifiManager;
 static WiFiClient wifiClient;
 static PubSubClient mqttClient(wifiClient);
 static vri_mode_t mode = FLASH;
+
+static AudioGeneratorMP3 *mp3;
 static AudioOutputI2SNoDAC *dac;
+static AudioFileSourceSPIFFS *file;
 
 // updates all three LEDs
 static void leds_write(int red, int yellow, int green)
@@ -82,6 +86,17 @@ static void mqtt_callback(const char *topic, byte* payload, unsigned int length)
         
         int val = atoi(str);
         leds_init((vri_mode_t)val);
+
+        // start audio if the file exist
+        char filename[16];
+        sprintf(filename, "/%d.mp3", val);
+        if (SPIFFS.exists(filename)) {
+            if (!mp3->isRunning()) {
+                Serial.println("Begin audio playback.");
+                file->open(filename);
+                mp3->begin(file, dac);
+            }
+        }
     }
 }
 
@@ -109,6 +124,11 @@ void setup(void)
     // connect to topic
     mqttClient.setServer(MQTT_HOST, MQTT_PORT);
     mqttClient.setCallback(mqtt_callback);
+
+    // init audio
+    mp3 = new AudioGeneratorMP3();
+    dac = new AudioOutputI2SNoDAC();
+    file = new AudioFileSourceSPIFFS();
 }
 
 void loop()
@@ -119,10 +139,18 @@ void loop()
     
     // stay subscribed
     if (!mqttClient.connected()) {
-        Serial.println("connecting ...");
         mqttClient.connect(esp_id);
         mqttClient.subscribe(MQTT_TOPIC);
     }
     mqttClient.loop();
+
+    // run audio if applicable
+    if (mp3->isRunning()) {
+        if (!mp3->loop()) {
+            Serial.println("Audio playback done.");
+            mp3->stop();
+            file->close();
+        }
+    }
 }
 
