@@ -16,9 +16,9 @@
 
 #define MQTT_TOPIC  "bertrik/buildstatus"
 
-#define PIN_RED     D3
-#define PIN_YELLOW  D4
-#define PIN_GREEN   D5
+#define PIN_RED     D2
+#define PIN_YELLOW  D3
+#define PIN_GREEN   D4
 
 typedef enum {
     OFF = 0,
@@ -41,9 +41,9 @@ static AudioFileSourceSPIFFS *file;
 // updates all three LEDs
 static void leds_write(int red, int yellow, int green)
 {
-    digitalWrite(PIN_RED, !red);
-    digitalWrite(PIN_YELLOW, !yellow);
-    digitalWrite(PIN_GREEN, !green);
+    digitalWrite(PIN_RED, red);
+    digitalWrite(PIN_YELLOW, yellow);
+    digitalWrite(PIN_GREEN, green);
 }
 
 // runs the LEDs including flashing
@@ -52,12 +52,13 @@ static void leds_run(vri_mode_t mode, unsigned long ms)
     int blink = (ms / 500) % 2;
 
     switch (mode) {
-    case OFF:       leds_write(0, 0, 0);        break;
     case RED:       leds_write(1, 0, 0);        break;
     case YELLOW:    leds_write(0, 1, 0);        break;
     case GREEN:     leds_write(0, 0, 1);        break;
     case FLASH:     leds_write(0, blink, 0);    break;
+
     default:
+    case OFF:       leds_write(0, 0, 0);        break;
         break;
     }
 }
