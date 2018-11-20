@@ -6,10 +6,15 @@
 #include <WiFiManager.h>
 #include <PubSubClient.h>
 
+#ifdef AUDIO
 #include "AudioFileSourceSPIFFS.h"
 #include "AudioFileSourceID3.h"
 #include "AudioGeneratorMP3.h"
 #include "AudioOutputI2SNoDAC.h"
+#endif
+
+#include "cmdproc.h"
+#include "editline.h"
 
 #define MQTT_HOST   "test.mosquitto.org"
 #define MQTT_PORT   1883
@@ -34,9 +39,13 @@ static WiFiClient wifiClient;
 static PubSubClient mqttClient(wifiClient);
 static vri_mode_t mode = FLASH;
 
+#ifdef AUDIO
 static AudioGeneratorMP3 *mp3;
 static AudioOutputI2SNoDAC *dac;
 static AudioFileSourceSPIFFS *file;
+#endif
+
+static char editline[120];
 
 // updates all three LEDs
 static void leds_write(int red, int yellow, int green)
@@ -64,13 +73,19 @@ static void leds_run(vri_mode_t mode, unsigned long ms)
 }
 
 // initializes the LEDs
-static void leds_init(vri_mode_t newmode)
+static void leds_init(void)
 {
     pinMode(PIN_RED, OUTPUT);
     pinMode(PIN_YELLOW, OUTPUT);
     pinMode(PIN_GREEN, OUTPUT);
-    mode = newmode;
+    mode = FLASH;
     leds_run(mode, 0);
+}
+
+static void leds_set(const char *str)
+{
+    int value = atoi(str);
+    mode = (vri_mode_t)value;
 }
 
 static void mqtt_callback(const char *topic, byte* payload, unsigned int length)
@@ -85,12 +100,12 @@ static void mqtt_callback(const char *topic, byte* payload, unsigned int length)
         Serial.print(str);
         Serial.println("'");
         
-        int val = atoi(str);
-        leds_init((vri_mode_t)val);
+        leds_set(str);
 
+#ifdef AUDIO
         // start audio if the file exist
         char filename[16];
-        sprintf(filename, "/%d.mp3", val);
+        sprintf(filename, "/%s.mp3", str);
         if (SPIFFS.exists(filename)) {
             if (!mp3->isRunning()) {
                 Serial.println("Begin audio playback.");
@@ -98,20 +113,35 @@ static void mqtt_callback(const char *topic, byte* payload, unsigned int length)
                 mp3->begin(file, dac);
             }
         }
+#endif
     }
 }
+
+static int do_set(int argc, char *argv[]) 
+{
+    if (argc < 2) {
+        return -1;
+    }
+    leds_set(argv[1]);
+    return 0;
+}
+
+static const cmd_t cmds[] = {
+    { "set", do_set, "<value> Sets the build status to 'value'"},
+    { "", NULL, ""} 
+};
 
 void setup(void)
 {
     // initialize serial port
     Serial.begin(115200);
     Serial.print("\nBuildStatusLight\n");
-    
-    // init file system
-    SPIFFS.begin();
 
     // init LEDs
-    leds_init(FLASH);
+    leds_init();
+    
+    // init command handler
+    EditInit(editline, sizeof(editline));
 
     // get ESP id
     sprintf(esp_id, "%08X", ESP.getChipId());
@@ -126,10 +156,13 @@ void setup(void)
     mqttClient.setServer(MQTT_HOST, MQTT_PORT);
     mqttClient.setCallback(mqtt_callback);
 
+#ifdef AUDIO
     // init audio
+    SPIFFS.begin();
     mp3 = new AudioGeneratorMP3();
     dac = new AudioOutputI2SNoDAC();
     file = new AudioFileSourceSPIFFS();
+#endif
 }
 
 void loop()
@@ -145,6 +178,30 @@ void loop()
     }
     mqttClient.loop();
 
+    // handle commands
+    bool haveLine = false;
+    if (Serial.available()) {
+        char cout;
+        haveLine = EditLine(Serial.read(), &cout);
+        Serial.print(cout);
+    }
+    if (haveLine) {
+        int result = cmd_process(cmds, editline);
+        switch (result) {
+        case CMD_OK:
+            Serial.println("OK");
+            break;
+        case CMD_NO_CMD:
+            break;
+        default:
+            Serial.print("ERR ");
+            Serial.println(result);
+            break;
+        }
+        Serial.print(">");
+    }
+
+#ifdef AUDIO
     // run audio if applicable
     if (mp3->isRunning()) {
         if (!mp3->loop()) {
@@ -153,5 +210,6 @@ void loop()
             file->close();
         }
     }
+#endif
 }
 
