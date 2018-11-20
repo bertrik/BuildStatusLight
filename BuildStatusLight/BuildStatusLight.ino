@@ -15,6 +15,7 @@
 
 #include "cmdproc.h"
 #include "editline.h"
+#include "print.h"
 
 #define MQTT_HOST   "test.mosquitto.org"
 #define MQTT_PORT   1883
@@ -134,8 +135,8 @@ static const cmd_t cmds[] = {
 void setup(void)
 {
     // initialize serial port
-    Serial.begin(115200);
-    Serial.print("\nBuildStatusLight\n");
+    PrintInit(115200);
+    print("\nBuildStatusLight\n");
 
     // init LEDs
     leds_init();
@@ -145,11 +146,10 @@ void setup(void)
 
     // get ESP id
     sprintf(esp_id, "%08X", ESP.getChipId());
-    Serial.print("ESP ID: ");
-    Serial.println(esp_id);
+    print("ESP ID: %s", esp_id);
 
     // connect to wifi
-    Serial.println("Starting WIFI manager ...");
+    print("Starting WIFI manager ...\n");
     wifiManager.autoConnect("ESP-BuildStatusLight");
     
     // connect to topic
@@ -183,29 +183,28 @@ void loop()
     if (Serial.available()) {
         char cout;
         haveLine = EditLine(Serial.read(), &cout);
-        Serial.print(cout);
+        print("%c", cout);
     }
     if (haveLine) {
         int result = cmd_process(cmds, editline);
         switch (result) {
         case CMD_OK:
-            Serial.println("OK");
+            print("OK\n");
             break;
         case CMD_NO_CMD:
             break;
         default:
-            Serial.print("ERR ");
-            Serial.println(result);
+            print("ERR %d\n", result);
             break;
         }
-        Serial.print(">");
+        printf(">");
     }
 
 #ifdef AUDIO
     // run audio if applicable
     if (mp3->isRunning()) {
         if (!mp3->loop()) {
-            Serial.println("Audio playback done.");
+            print("Audio playback done.\n");
             mp3->stop();
             file->close();
         }
