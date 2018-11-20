@@ -118,6 +118,15 @@ static void mqtt_callback(const char *topic, byte* payload, unsigned int length)
     }
 }
 
+static void show_help(const cmd_t *cmds)
+{
+    for (const cmd_t *cmd = cmds; cmd->cmd != NULL; cmd++) {
+        print("%10s: %s\n", cmd->name, cmd->help);
+    }
+}
+
+static int do_help(int argc, char *argv[]);
+
 static int do_set(int argc, char *argv[]) 
 {
     if (argc < 2) {
@@ -127,10 +136,17 @@ static int do_set(int argc, char *argv[])
     return 0;
 }
 
-static const cmd_t cmds[] = {
-    { "set", do_set, "<value> Sets the build status to 'value'"},
+static const cmd_t commands[] = {
+    { "set",    do_set,     "<value> Sets the build status to 'value'"},
+    { "help",   do_help,    "Show available commands"},
     { "", NULL, ""} 
 };
+
+static int do_help(int argc, char *argv[])
+{
+    show_help(commands);
+    return 0;
+}
 
 void setup(void)
 {
@@ -186,7 +202,7 @@ void loop()
         print("%c", cout);
     }
     if (haveLine) {
-        int result = cmd_process(cmds, editline);
+        int result = cmd_process(commands, editline);
         switch (result) {
         case CMD_OK:
             print("OK\n");
