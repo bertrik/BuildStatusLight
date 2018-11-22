@@ -6,13 +6,6 @@
 #include <WiFiManager.h>
 #include <PubSubClient.h>
 
-#ifdef AUDIO
-#include "AudioFileSourceSPIFFS.h"
-#include "AudioFileSourceID3.h"
-#include "AudioGeneratorMP3.h"
-#include "AudioOutputI2SNoDAC.h"
-#endif
-
 #include "cmdproc.h"
 #include "editline.h"
 #include "print.h"
@@ -39,12 +32,6 @@ static WiFiManager wifiManager;
 static WiFiClient wifiClient;
 static PubSubClient mqttClient(wifiClient);
 static vri_mode_t mode = FLASH;
-
-#ifdef AUDIO
-static AudioGeneratorMP3 *mp3;
-static AudioOutputI2SNoDAC *dac;
-static AudioFileSourceSPIFFS *file;
-#endif
 
 static char editline[120];
 
@@ -102,19 +89,6 @@ static void mqtt_callback(const char *topic, byte* payload, unsigned int length)
         Serial.println("'");
         
         leds_set(str);
-
-#ifdef AUDIO
-        // start audio if the file exist
-        char filename[16];
-        sprintf(filename, "/%s.mp3", str);
-        if (SPIFFS.exists(filename)) {
-            if (!mp3->isRunning()) {
-                Serial.println("Begin audio playback.");
-                file->open(filename);
-                mp3->begin(file, dac);
-            }
-        }
-#endif
     }
 }
 
@@ -171,14 +145,6 @@ void setup(void)
     // connect to topic
     mqttClient.setServer(MQTT_HOST, MQTT_PORT);
     mqttClient.setCallback(mqtt_callback);
-
-#ifdef AUDIO
-    // init audio
-    SPIFFS.begin();
-    mp3 = new AudioGeneratorMP3();
-    dac = new AudioOutputI2SNoDAC();
-    file = new AudioFileSourceSPIFFS();
-#endif
 }
 
 void loop()
@@ -215,16 +181,5 @@ void loop()
         }
         printf(">");
     }
-
-#ifdef AUDIO
-    // run audio if applicable
-    if (mp3->isRunning()) {
-        if (!mp3->loop()) {
-            print("Audio playback done.\n");
-            mp3->stop();
-            file->close();
-        }
-    }
-#endif
 }
 
