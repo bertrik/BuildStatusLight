@@ -10,11 +10,6 @@
 #include "editline.h"
 #include "print.h"
 
-#define MQTT_HOST   "test.mosquitto.org"
-#define MQTT_PORT   1883
-
-#define MQTT_TOPIC  "bertrik/buildstatus"
-
 #define PIN_RED     D2
 #define PIN_YELLOW  D3
 #define PIN_GREEN   D4
@@ -27,10 +22,6 @@ typedef enum {
     FLASH
 } vri_mode_t;
 
-static char esp_id[16];
-static WiFiManager wifiManager;
-static WiFiClient wifiClient;
-static PubSubClient mqttClient(wifiClient);
 static vri_mode_t mode = FLASH;
 
 static char editline[120];
@@ -76,22 +67,6 @@ static void leds_set(const char *str)
     mode = (vri_mode_t)value;
 }
 
-static void mqtt_callback(const char *topic, byte* payload, unsigned int length)
-{
-    char str[100];
-
-    if (length < sizeof(str)) {
-        memcpy(str, payload, length);
-        str[length] = '\0';
-
-        Serial.print("Received '");
-        Serial.print(str);
-        Serial.println("'");
-        
-        leds_set(str);
-    }
-}
-
 static void show_help(const cmd_t *cmds)
 {
     for (const cmd_t *cmd = cmds; cmd->cmd != NULL; cmd++) {
@@ -133,18 +108,6 @@ void setup(void)
     
     // init command handler
     EditInit(editline, sizeof(editline));
-
-    // get ESP id
-    sprintf(esp_id, "%08X", ESP.getChipId());
-    print("ESP ID: %s", esp_id);
-
-    // connect to wifi
-    print("Starting WIFI manager ...\n");
-    wifiManager.autoConnect("ESP-BuildStatusLight");
-    
-    // connect to topic
-    mqttClient.setServer(MQTT_HOST, MQTT_PORT);
-    mqttClient.setCallback(mqtt_callback);
 }
 
 void loop()
@@ -153,13 +116,6 @@ void loop()
     unsigned long t = millis();
     leds_run(mode, t);
     
-    // stay subscribed
-    if (!mqttClient.connected()) {
-        mqttClient.connect(esp_id);
-        mqttClient.subscribe(MQTT_TOPIC);
-    }
-    mqttClient.loop();
-
     // handle commands
     bool haveLine = false;
     if (Serial.available()) {
