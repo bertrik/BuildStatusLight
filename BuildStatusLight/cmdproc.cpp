@@ -1,7 +1,6 @@
 #include <string.h>
 
 #include "cmdproc.h"
-#include <Arduino.h>
 
 static const cmd_t *find_cmd(const cmd_t * commands, const char *name)
 {
