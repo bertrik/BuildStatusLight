@@ -2,10 +2,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#include <ESP8266WiFi.h>
-#include <WiFiManager.h>
-#include <PubSubClient.h>
-
 #include "cmdproc.h"
 #include "editline.h"
 #include "print.h"
