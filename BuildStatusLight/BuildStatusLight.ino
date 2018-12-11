@@ -22,27 +22,63 @@ static vri_mode_t mode = FLASH;
 
 static char editline[120];
 
-// updates all three LEDs
-static void leds_write(int red, int yellow, int green)
+static int fade(int value, int target)
 {
-    digitalWrite(PIN_RED, red);
-    digitalWrite(PIN_YELLOW, yellow);
-    digitalWrite(PIN_GREEN, green);
+    if (value < target) {
+        value++;
+    }
+    if (value > target) {
+        value--;
+    }
+    return value;
+}
+
+// updates all three LEDs
+static void leds_write(int ms, int red, int yellow, int green)
+{
+    static int r, y, g;
+    static int last_ms;
+
+    // fade to new value
+    if (ms != last_ms) {
+        r = fade(r, red);
+        y = fade(y, yellow);
+        g = fade(g, green);
+        last_ms = ms;
+    }
+
+    analogWrite(PIN_RED, r);
+    analogWrite(PIN_YELLOW, y);
+    analogWrite(PIN_GREEN, g);
+}
+
+static int flicker(unsigned long ms)
+{
+    static int target = 0;
+    static int last_phase = 0;
+
+    int phase = ms / 200;
+    if (phase != last_phase) {
+        target = random(128, 255);
+        last_phase = phase;
+    }
+    return target;
 }
 
 // runs the LEDs including flashing
 static void leds_run(vri_mode_t mode, unsigned long ms)
 {
-    int blink = (ms / 500) % 2;
+    int candle = flicker(ms);
+    int blink = ((ms / 500) % 2) ? 255 : 0;
 
     switch (mode) {
-    case RED:       leds_write(1, 0, 0);        break;
-    case YELLOW:    leds_write(0, 1, 0);        break;
-    case GREEN:     leds_write(0, 0, 1);        break;
-    case FLASH:     leds_write(0, blink, 0);    break;
-
+    case RED:       leds_write(ms, candle, 0, 0);   break;
+    case YELLOW:    leds_write(ms, 0, candle, 0);   break;
+    case GREEN:     leds_write(ms, 0, 0, candle);   break;
+    case FLASH:     leds_write(ms, 0, blink, 0);    break;
+    case OFF:
     default:
-    case OFF:       leds_write(0, 0, 0);        break;
+        leds_write(ms, 0, 0, 0);
         break;
     }
 }
@@ -50,6 +86,7 @@ static void leds_run(vri_mode_t mode, unsigned long ms)
 // initializes the LEDs
 static void leds_init(void)
 {
+    analogWriteRange(255);
     pinMode(PIN_RED, OUTPUT);
     pinMode(PIN_YELLOW, OUTPUT);
     pinMode(PIN_GREEN, OUTPUT);
@@ -95,14 +132,11 @@ static int do_help(int argc, char *argv[])
 
 void setup(void)
 {
-    // initialize serial port
     PrintInit(115200);
     print("\nBuildStatusLight\n");
 
-    // init LEDs
     leds_init();
-    
-    // init command handler
+
     EditInit(editline, sizeof(editline));
 }
 
