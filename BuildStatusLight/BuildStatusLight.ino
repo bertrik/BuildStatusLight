@@ -52,29 +52,15 @@ static void leds_write(int ms, int red, int yellow, int green)
     analogWrite(PIN_GREEN, g);
 }
 
-static int flicker(unsigned long ms)
-{
-    static int target = 0;
-    static int last_phase = 0;
-
-    int phase = ms / 200;
-    if (phase != last_phase) {
-        target = random(128, 255);
-        last_phase = phase;
-    }
-    return target;
-}
-
 // runs the LEDs including flashing
 static void leds_run(vri_mode_t mode, unsigned long ms)
 {
-    int candle = flicker(ms);
     int blink = ((ms / 500) % 2) ? 255 : 0;
 
     switch (mode) {
-    case RED:       leds_write(ms, candle, 0, 0);   break;
-    case YELLOW:    leds_write(ms, 0, candle, 0);   break;
-    case GREEN:     leds_write(ms, 0, 0, candle);   break;
+    case RED:       leds_write(ms, 255, 0, 0);   break;
+    case YELLOW:    leds_write(ms, 0, 255, 0);   break;
+    case GREEN:     leds_write(ms, 0, 0, 255);   break;
     case FLASH:     leds_write(ms, 0, blink, 0);    break;
     case OFF:
     default:
