@@ -15,10 +15,11 @@ typedef enum {
     RED,
     YELLOW,
     GREEN,
-    FLASH
+    FLASH,
+    UPDOWN
 } vri_mode_t;
 
-static vri_mode_t mode = FLASH;
+static vri_mode_t mode = OFF;
 
 static char editline[120];
 
@@ -34,10 +35,10 @@ static int fade(int value, int target)
 }
 
 // updates all three LEDs
-static void leds_write(int ms, int red, int yellow, int green)
+static void leds_write(unsigned long ms, int red, int yellow, int green)
 {
     static int r, y, g;
-    static int last_ms;
+    static unsigned long last_ms;
 
     // fade to new value
     if (ms != last_ms) {
@@ -52,6 +53,19 @@ static void leds_write(int ms, int red, int yellow, int green)
     analogWrite(PIN_GREEN, g);
 }
 
+// performs the 'updown' animation
+static void animate_updown(unsigned long ms, int illum)
+{
+    int phase = (ms / 200) % 6;
+    switch (phase) {
+    case 0: case 5: leds_write(ms, illum, 0, 0);  break;
+    case 1: case 4: leds_write(ms, 0, illum, 0);  break;
+    case 2: case 3: leds_write(ms, 0, 0, illum);  break;
+    default:
+        break;
+    }
+}
+
 // runs the LEDs including flashing
 static void leds_run(vri_mode_t mode, unsigned long ms)
 {
@@ -61,7 +75,8 @@ static void leds_run(vri_mode_t mode, unsigned long ms)
     case RED:       leds_write(ms, 255, 0, 0);   break;
     case YELLOW:    leds_write(ms, 0, 255, 0);   break;
     case GREEN:     leds_write(ms, 0, 0, 255);   break;
-    case FLASH:     leds_write(ms, 0, blink, 0);    break;
+    case FLASH:     leds_write(ms, 0, blink, 0); break;
+    case UPDOWN:    animate_updown(ms, 255);     break;
     case OFF:
     default:
         leds_write(ms, 0, 0, 0);
@@ -76,7 +91,7 @@ static void leds_init(void)
     pinMode(PIN_RED, OUTPUT);
     pinMode(PIN_YELLOW, OUTPUT);
     pinMode(PIN_GREEN, OUTPUT);
-    mode = FLASH;
+    mode = UPDOWN;
     leds_run(mode, 0);
 }
 
