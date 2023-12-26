@@ -6,7 +6,7 @@
 #define NUM_LEDS    8
 #define PIN_LED     D4
 
-static tlc_mode_t tlc_mode = OFF;
+static tlc_mode_t tlc_mode = TLC_MODE_OFF;
 static CRGB leds[NUM_LEDS];
 
 void tlc_init(void)
@@ -43,19 +43,19 @@ void tlc_run(unsigned long ms)
     int blink = (millis() / 500) % 2;
 
     switch (tlc_mode) {
-    case OFF:
+    case TLC_MODE_OFF:
         tlc_set_colors(false, false, false);
         break;
-    case RED:
+    case TLC_MODE_RED:
         tlc_set_colors(true, false, false);
         break;
-    case YELLOW:
+    case TLC_MODE_YELLOW:
         tlc_set_colors(false, true, false);
         break;
-    case GREEN:
+    case TLC_MODE_GREEN:
         tlc_set_colors(false, false, true);
         break;
-    case FLASH:
+    case TLC_MODE_FLASH:
         tlc_set_colors(false, blink, false);
         break;
     default:
