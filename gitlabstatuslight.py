@@ -82,7 +82,7 @@ def main():
                 case "failed":
                     color = PatliteClient.Color.RED
                 case _:
-                    color = PatliteClient.Color.AMBER
+                    color = PatliteClient.Color.BLUE
             print(f"{ref}: {status} -> {color}")
             colors.append(color)
         patlite.set_color(colors)
