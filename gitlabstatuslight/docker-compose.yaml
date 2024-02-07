@@ -1,0 +1,7 @@
+version: "3"
+services:
+  python:
+    image: ghcr.io/bertrik/buildstatuslight
+    env_file: .env
+    build: .
+
