@@ -10,6 +10,7 @@ import time
 import argparse
 import requests
 
+
 class GitlabCLient():
     """ Retrieves pipeline build status from gitlab """
 
@@ -18,12 +19,13 @@ class GitlabCLient():
 
     def get_latest_pipeline(self, projectid, token, ref):
         url = f"https://{self.host}/api/v4/projects/{projectid}/pipelines/latest"
-        headers = {"PRIVATE-TOKEN" : token}
+        headers = {"PRIVATE-TOKEN": token}
         params = {"ref": ref}
         response = requests.get(url, headers=headers, params=params, timeout=20)
         if not response.ok:
             print(f"GET of {url} for ref '{ref}' failed: {response.status_code} - {response.reason}")
         return response.json()
+
 
 class PatliteClient():
     """ Communicates with a Patlite LA6 """
@@ -46,15 +48,16 @@ class PatliteClient():
 
     def send_control(self, params):
         url = f"http://{self.host}/api/control"
-        requests.get(url, params = params, timeout = 20)
+        requests.get(url, params=params, timeout=20)
 
     def set_color(self, colors):
         code = ""
         for tier in range(0, 5):
             color = colors[tier] if tier < len(colors) else PatliteClient.Color.OFF
             code = code + f"{color.value}"
-        params = { "color" : code, "buzzer" : 0 }
+        params = {"color": code, "buzzer": 0}
         self.send_control(params)
+
 
 def main():
     """ The main entry point """
@@ -64,10 +67,10 @@ def main():
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("-gitlab", help="The gitlab instance host name",
-        default="gitlab.technolution.nl")
+                        default="gitlab.technolution.nl")
     parser.add_argument("-t", "--token", help="The gitlab API private token", default="")
     parser.add_argument("-i", "--projectid", help="The gitlab project id", default="197")
-    parser.add_argument("-patlite", help="The patlist host name", default = "localhost:8000")
+    parser.add_argument("-patlite", help="The patlist host name", default="localhost:8000")
     args = parser.parse_args()
 
     gitlab = GitlabCLient(args.gitlab)
@@ -90,6 +93,7 @@ def main():
         patlite.set_color(colors)
 
         time.sleep(300)
+
 
 if __name__ == "__main__":
     main()
