@@ -20,7 +20,9 @@ class GitlabCLient():
         url = f"https://{self.host}/api/v4/projects/{projectid}/pipelines/latest"
         headers = {"PRIVATE-TOKEN" : token}
         params = {"ref": ref}
-        response = requests.get(url, headers = headers, params = params, timeout = 20)
+        response = requests.get(url, headers=headers, params=params, timeout=20)
+        if not response.ok:
+            print(f"GET of {url} for ref '{ref}' failed: {response.status_code} - {response.reason}")
         return response.json()
 
 class PatliteClient():
