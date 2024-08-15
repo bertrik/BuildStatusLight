@@ -70,7 +70,7 @@ def main():
 
     gitlab = GitlabCLient(args.gitlab)
     patlite = PatliteClient(args.patlite)
-    refs = ["master", "releases/1.57.x"]
+    refs = ["master", "releases/1.58.x", "releases/1.56.x"]
     while True:
         colors = []
         for ref in refs:
