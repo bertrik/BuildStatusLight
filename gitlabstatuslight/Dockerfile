@@ -1,4 +1,4 @@
-FROM alpine:3.19
+FROM alpine:3.21
 
 LABEL maintainer="Bertrik Sikken bertrik@gmail.com"
 
