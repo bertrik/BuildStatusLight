@@ -68,9 +68,11 @@ class PatliteClient():
         self.send_control(params)
 
 def queue_duration_to_color(jobs) -> PatliteClient.Color:
-    if len(jobs) == 0:
+    print(f"{jobs}")
+    running_or_pending_jobs = [job for job in jobs if job["status"] in ("running", "pending")]
+    if len(running_or_pending_jobs) == 0:
         return PatliteClient.Color.BLUE
-    queued_duration = float(jobs[0]["queued_duration"])
+    queued_duration = float(running_or_pending_jobs[0]["queued_duration"])
     print(f"Most recent queued duration = {queued_duration}")
     if queued_duration < 20:
         return PatliteClient.Color.GREEN
