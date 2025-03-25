@@ -55,11 +55,11 @@ class PatliteClient():
     def __init__(self, host: str):
         self.host = host
 
-    def send_control(self, params):
+    def send_control(self, params) -> None:
         url = f"http://{self.host}/api/control"
         requests.get(url, params=params, timeout=20)
 
-    def set_color(self, colors):
+    def set_color(self, colors) -> None:
         code = ""
         for tier in range(0, 5):
             color = colors[tier] if tier < len(colors) else PatliteClient.Color.OFF
