@@ -67,16 +67,19 @@ class PatliteClient():
         params = {"color": code, "buzzer": 0}
         self.send_control(params)
 
+
 def queue_duration_to_color(jobs) -> PatliteClient.Color:
-    if len(jobs) == 0:
-        return PatliteClient.Color.BLUE
-    queued_duration = float(jobs[0]["queued_duration"])
-    print(f"Most recent queued duration = {queued_duration}")
-    if queued_duration < 20:
+    pending = 0
+    for job in jobs:
+        if job['status'] == 'pending':
+             pending += 1
+    print(f"Number of pending jobs: {pending}")
+    if pending < 1:
         return PatliteClient.Color.GREEN
-    if queued_duration < 120:
+    if pending < 2:
         return PatliteClient.Color.AMBER
     return PatliteClient.Color.RED
+
 
 def main():
     """ The main entry point """
@@ -94,7 +97,7 @@ def main():
 
     gitlab = GitlabCLient(args.gitlab, args.projectid, args.token)
     patlite = PatliteClient(args.patlite)
-    refs = ["master", "releases/1.56.x"]
+    refs = ["master", "releases/1.60.0", "releases/1.59.0", "releases/1.56.x"]
     while True:
         colors = []
 
