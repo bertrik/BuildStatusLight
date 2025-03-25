@@ -11,10 +11,10 @@ import argparse
 import requests
 
 
-class GitlabCLient():
+class GitlabCLient:
     """ Retrieves pipeline build status from gitlab """
 
-    def __init__(self, host : str, projectid: str, token: str):
+    def __init__(self, host: str, projectid: str, token: str):
         self.host = host
         self.projectid = projectid
         self.token = token
@@ -30,13 +30,14 @@ class GitlabCLient():
 
     def get_jobs(self):
         url = f"https://{self.host}/api/v4/projects/{self.projectid}/jobs"
-        headers = {"PRIVATE-TOKEN" : self.token}
+        headers = {"PRIVATE-TOKEN": self.token}
         response = requests.get(url, headers=headers, timeout=20)
         if not response.ok:
             print(f"GET of {url} failed: {response.status_code} - {response.reason}")
         return response.json()
 
-class PatliteClient():
+
+class PatliteClient:
     """ Communicates with a Patlite LA6 """
 
     class Color(Enum):
@@ -72,7 +73,7 @@ def queue_duration_to_color(jobs) -> PatliteClient.Color:
     pending = 0
     for job in jobs:
         if job['status'] == 'pending':
-             pending += 1
+            pending += 1
     print(f"Number of pending jobs: {pending}")
     if pending < 1:
         return PatliteClient.Color.GREEN
